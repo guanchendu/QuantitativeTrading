@@ -1,0 +1,53 @@
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+
+# Local secrets and credentials
+.env
+.env.*
+*.key
+*.pem
+DONOTGIT_API.py
+
+# Research data, logs, and generated experiment outputs
+data/
+datasets/
+outputs/
+results/
+runs/
+logs/
+*.log
+*.csv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+
+
+
+DONOTGIT_API.py
