@@ -47,7 +47,6 @@ logs/
 *.pkl
 *.pickle
 
-
-
+.csv
 
 DONOTGIT_API.py
