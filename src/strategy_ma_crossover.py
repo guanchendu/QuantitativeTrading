@@ -20,7 +20,19 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
-DEFAULT_TICKERS = ["GOOG", "META", "NVDA", "TSLA"]
+# DEFAULT_TICKERS = ["CLF", "META", "NVDA", "TSLA"]
+DEFAULT_TICKERS = [
+    "AAPL",  "MSFT",  "NVDA",  "GOOGL", "AMZN",
+    "META",  "TSLA",  "AVGO",  "ORCL",  "CRM",
+    "ADBE",  "AMD",   "NFLX",  "CSCO",  "ACN",
+    "INTC",  "QCOM",  "TXN",   "IBM",   "INTU",
+    "NOW",   "AMAT",  "PANW",  "MU",    "LRCX",
+    "ADI",   "KLAC",  "ANET",  "CDNS",  "SNPS",
+    "MRVL",  "CRWD",  "FTNT",  "WDAY",  "PLTR",
+    "ADSK",  "NXPI",  "MCHP",  "SNOW",  "DDOG",
+    "TEAM",  "MDB",   "NET",   "ZS",    "DELL",
+    "UBER",  "SHOP",  "SPOT",  "ABNB",  "GOOG",
+]
 TRADING_DAYS = 252
 
 
@@ -121,8 +133,8 @@ def run(tickers: list[str], short: int, long: int) -> None:
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="双均线交叉策略回测")
     p.add_argument("--tickers", nargs="+", default=DEFAULT_TICKERS)
-    p.add_argument("--short", type=int, default=20, help="短期均线窗口, 默认 20")
-    p.add_argument("--long", type=int, default=60, help="长期均线窗口, 默认 60")
+    p.add_argument("--short", type=int, default=5, help="短期均线窗口, 默认 20")
+    p.add_argument("--long", type=int, default=10, help="长期均线窗口, 默认 60")
     return p.parse_args()
 
 
