@@ -83,40 +83,68 @@ class TradeResult:
 def simulate_trade(
     days: pd.DataFrame, buy_price: float, tp: float, sl: float,
     rebal: pd.Timestamp, ts_code: str,
+    sl_use_close: bool = False,
 ) -> TradeResult:
     """给定下周持仓期内的日 OHLC, 模拟一笔交易.
 
     days 必须按 trade_date 升序, 第一行就是买入日.
-    同日 H 和 L 都触发时, 假设 SL 先发生 (保守).
+
+    sl_use_close=False (默认, 旧行为):
+        盘中触发 SL — 当日 low <= sl_price 即砍仓, 出场价 = sl_price.
+        同日 H/L 都触发时, 假设 SL 先发生 (保守).
+
+    sl_use_close=True (新选项):
+        收盘触发 SL — 只看 close, 当日 close <= sl_price 才砍, 出场价 = close.
+        TP 仍在盘中检查 (high >= tp_price), 因此同日先 TP 后 SL.
+        优点: 过滤掉日内"插针"假摔; 缺点: 真崩盘当日多亏 1-2%.
     """
     sl_price = buy_price * (1.0 - sl)
     tp_price = buy_price * (1.0 + tp)
+    buy_date = days.iloc[0]["trade_date"]
 
     for i, row in enumerate(days.itertuples(index=False), 1):
-        # 1. 先检查止损 (保守口径)
-        if row.low <= sl_price:
-            return TradeResult(
-                ts_code=ts_code, rebalance_date=rebal,
-                buy_date=days.iloc[0]["trade_date"], buy_price=buy_price,
-                exit_date=row.trade_date, exit_price=sl_price,
-                exit_reason="SL", hold_days=i,
-                ret=(sl_price - buy_price) / buy_price,
-            )
-        # 2. 再检查止盈
-        if row.high >= tp_price:
-            return TradeResult(
-                ts_code=ts_code, rebalance_date=rebal,
-                buy_date=days.iloc[0]["trade_date"], buy_price=buy_price,
-                exit_date=row.trade_date, exit_price=tp_price,
-                exit_reason="TP", hold_days=i,
-                ret=(tp_price - buy_price) / buy_price,
-            )
+        if sl_use_close:
+            # TP 优先 (盘中可触发), SL 等到收盘后才确定
+            if row.high >= tp_price:
+                return TradeResult(
+                    ts_code=ts_code, rebalance_date=rebal,
+                    buy_date=buy_date, buy_price=buy_price,
+                    exit_date=row.trade_date, exit_price=tp_price,
+                    exit_reason="TP", hold_days=i,
+                    ret=(tp_price - buy_price) / buy_price,
+                )
+            if row.close <= sl_price:
+                return TradeResult(
+                    ts_code=ts_code, rebalance_date=rebal,
+                    buy_date=buy_date, buy_price=buy_price,
+                    exit_date=row.trade_date, exit_price=float(row.close),
+                    exit_reason="SL", hold_days=i,
+                    ret=(row.close - buy_price) / buy_price,
+                )
+        else:
+            # 老逻辑: SL 优先 (保守), 都用盘中价
+            if row.low <= sl_price:
+                return TradeResult(
+                    ts_code=ts_code, rebalance_date=rebal,
+                    buy_date=buy_date, buy_price=buy_price,
+                    exit_date=row.trade_date, exit_price=sl_price,
+                    exit_reason="SL", hold_days=i,
+                    ret=(sl_price - buy_price) / buy_price,
+                )
+            if row.high >= tp_price:
+                return TradeResult(
+                    ts_code=ts_code, rebalance_date=rebal,
+                    buy_date=buy_date, buy_price=buy_price,
+                    exit_date=row.trade_date, exit_price=tp_price,
+                    exit_reason="TP", hold_days=i,
+                    ret=(tp_price - buy_price) / buy_price,
+                )
 
-    # 3. 时间止损: 最后一日收盘出
+    # 时间止损: 最后一日收盘出
     last = days.iloc[-1]
     return TradeResult(
         ts_code=ts_code, rebalance_date=rebal,
-        buy_date=days.iloc[0]["trade_date"], buy_price=buy_price,
+        buy_date=buy_date, buy_price=buy_price,
         exit_date=last["trade_date"], exit_price=float(last["close"]),
         exit_reason="TIME", hold_days=len(days),
         ret=(last["close"] - buy_price) / buy_price,

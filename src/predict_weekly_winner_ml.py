@@ -139,10 +139,13 @@ def evaluate_predictions(test: pd.DataFrame, preds: pd.DataFrame, label: str) ->
 def run_backtest_ml(
     panel: pd.DataFrame, preds: pd.DataFrame, k: int,
     sl: float = SL_FIXED, tp_factor: float = TP_FACTOR,
+    sl_use_close: bool = False,
 ) -> tuple[list[TradeResult], pd.DataFrame]:
     """走预测驱动的回测.
 
     在 preds 覆盖的所有交易日中, 找出 rebalance Friday, 选 top-K, 模拟下周.
+
+    sl_use_close=True 时改成"收盘触发 SL", 详见 simulate_trade docstring.
     """
     rebals_all = get_rebalance_dates(panel)
     pred_dates = set(pd.to_datetime(preds["trade_date"]).unique())
@@ -185,7 +188,8 @@ def run_backtest_ml(
 
             tr = simulate_trade(days.reset_index(drop=True),
                                 buy_price=buy_price, tp=tp, sl=sl,
-                                rebal=rebal, ts_code=ts_code)
+                                rebal=rebal, ts_code=ts_code,
+                                sl_use_close=sl_use_close)
             week_trades.append(tr)
             trades.append(tr)
 
